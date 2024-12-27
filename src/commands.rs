@@ -4,11 +4,11 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 #[command(version, about, long_about = None, multicall = true)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Command,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum Commands {
+pub enum Command {
     /// Change type of the variables we scan for
     #[clap(visible_alias("t"))]
     Type(TypeArgs),
