@@ -10,6 +10,10 @@ repl commands:
 - set
 - freeze
 - config (fast scan, alignment options)
+- help
+- process - open a process
+
+
 - speedhacks? maybe i dont really care
 
 much much later
