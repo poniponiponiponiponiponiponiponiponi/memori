@@ -1,5 +1,5 @@
-use memori::repl::Repl;
 use memori::process::Process;
+use memori::repl::Repl;
 
 fn main() {
     let a = Process::try_new(1464);

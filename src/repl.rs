@@ -3,14 +3,19 @@ use crate::context::Context;
 
 use clap::Parser;
 use rustyline::error::ReadlineError;
-use rustyline::{DefaultEditor, Editor, Helper};
 use rustyline::history::DefaultHistory;
+use rustyline::{DefaultEditor, Editor};
 
 static DEFAULT_PROMPT: &str = "memori λ ";
 
 pub struct Repl<'a> {
     editor: Editor<(), DefaultHistory>,
     prompt: &'a str,
+}
+
+pub struct Message {
+    pub message: String,
+    pub is_error: bool,
 }
 
 impl<'a> Repl<'a> {
@@ -30,13 +35,9 @@ impl<'a> Repl<'a> {
             Ok(line) => {
                 self.editor.add_history_entry(&line).unwrap();
                 Some(line.to_string())
-            },
-            Err(ReadlineError::Interrupted) => {
-                None
-            },
-            Err(ReadlineError::Eof) => {
-                None
-            },
+            }
+            Err(ReadlineError::Interrupted) => None,
+            Err(ReadlineError::Eof) => None,
             Err(err) => {
                 eprintln!("Error: {:?}", err);
                 None
@@ -44,12 +45,39 @@ impl<'a> Repl<'a> {
         }
     }
 
-    pub fn eval(&mut self, cmd: &Command, ctx: &mut Context) {
+    pub fn eval(&mut self, cmd: &Command, ctx: &mut Context) -> Message {
         match cmd {
-            Command::Process(process_args) => {
-                ctx.process(process_args);
+            Command::Process(process_args) => match ctx.process(process_args) {
+                Ok(()) => {
+                    let message = format!(
+                        "connected to process: {}",
+                        ctx.process.as_ref().unwrap().command
+                    )
+                    .to_string();
+                    return Message {
+                        message,
+                        is_error: false,
+                    };
+                }
+                Err(err) => {
+                    return Message {
+                        message: err.to_string(),
+                        is_error: true,
+                    };
+                }
             },
-            _ => panic!("Impossible command")
+            _ => panic!("Impossible command"),
+        }
+    }
+
+    pub fn print(&mut self, msg: Message) {
+        match msg.is_error {
+            false => {
+                println!("{}", msg.message);
+            }
+            true => {
+                println!("got error: {}", msg.message);
+            }
         }
     }
 
@@ -60,11 +88,12 @@ impl<'a> Repl<'a> {
                 Some(line) => {
                     let cli = Cli::try_parse_from(line.split_whitespace());
                     if let Ok(cli) = cli {
-                        self.eval(&cli.command, &mut ctx);
+                        let msg = self.eval(&cli.command, &mut ctx);
+                        self.print(msg);
                     } else if let Err(e) = cli {
                         eprintln!("{}", e.render());
                     };
-                },
+                }
                 None => {
                     println!("WHYYY???");
                     break;

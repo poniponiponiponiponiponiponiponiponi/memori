@@ -5,9 +5,9 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 pub struct Process {
-    pid: usize,
-    command: String,
-    memory_maps: Vec<MemoryMap>,
+    pub pid: usize,
+    pub command: String,
+    pub memory_maps: Vec<MemoryMap>,
 }
 
 impl Process {
@@ -28,7 +28,7 @@ impl Process {
         Ok(Process {
             pid,
             command,
-            memory_maps
+            memory_maps,
         })
     }
 }

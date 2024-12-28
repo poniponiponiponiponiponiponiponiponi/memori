@@ -82,7 +82,7 @@ pub enum FilterOperator {
     Equal,
     /// !=
     #[value(alias("!="), hide = false)]
-    NotEqual
+    NotEqual,
 }
 
 #[derive(Debug, Args)]
@@ -90,19 +90,19 @@ pub struct FilterArgs {
     #[clap(required = true)]
     pub operator: FilterOperator,
     #[clap(required = true)]
-    pub operand: String
+    pub operand: String,
 }
 
 #[derive(Debug, Args)]
 pub struct SelectArgs {
     #[clap(required = true)]
-    pub to_select: usize
+    pub to_select: usize,
 }
 
 #[derive(Debug, Args)]
 pub struct UnselectArgs {
     #[clap(required = true)]
-    pub to_unselect: usize
+    pub to_unselect: usize,
 }
 
 #[derive(Debug, Args)]
@@ -110,13 +110,13 @@ pub struct SetArgs {
     #[clap(required = true)]
     pub selected: usize,
     #[clap(required = true)]
-    pub value: String
+    pub value: String,
 }
 
 #[derive(Debug, Args)]
 pub struct FreezeArgs {
     #[clap(required = true)]
-    pub selected: usize
+    pub selected: usize,
 }
 
 impl Cli {
