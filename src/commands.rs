@@ -40,6 +40,7 @@ pub enum Command {
     Freeze(FreezeArgs),
 
     /// Exit the program
+    #[clap(visible_alias("quit"))]
     Exit,
 }
 

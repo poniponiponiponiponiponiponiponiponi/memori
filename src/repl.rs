@@ -66,6 +66,13 @@ impl<'a> Repl<'a> {
                     };
                 }
             },
+            Command::Exit => {
+                ctx.quit = true;
+                return Message {
+                    message: "".to_string(),
+                    is_error: false,
+                };
+            }
             _ => panic!("Impossible command"),
         }
     }
@@ -73,7 +80,9 @@ impl<'a> Repl<'a> {
     pub fn print(&mut self, msg: Message) {
         match msg.is_error {
             false => {
-                println!("{}", msg.message);
+                if !msg.message.is_empty() {
+                    println!("{}", msg.message);
+                }
             }
             true => {
                 println!("got error: {}", msg.message);
@@ -83,7 +92,7 @@ impl<'a> Repl<'a> {
 
     pub fn repl(&mut self) {
         let mut ctx = Context::new();
-        loop {
+        while !ctx.quit {
             match self.read() {
                 Some(line) => {
                     let cli = Cli::try_parse_from(line.split_whitespace());

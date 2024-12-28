@@ -24,7 +24,6 @@ impl Process {
 
         let memory_maps: Vec<_> = maps.lines().map(|l| MemoryMap::from(l)).collect();
 
-        dbg!(&memory_maps);
         Ok(Process {
             pid,
             command,
