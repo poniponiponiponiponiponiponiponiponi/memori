@@ -1,6 +1,4 @@
-use std::fs::File;
-use std::io::{self, Read};
-
+#[derive(Debug)]
 pub struct MemoryMap {
     pub addr_start: usize,
     pub addr_end: usize,
@@ -11,6 +9,7 @@ pub struct MemoryMap {
     pub pathname: String
 }
 
+#[derive(Debug)]
 pub struct Permissions {
     pub read: bool,
     pub write: bool,
@@ -19,13 +18,14 @@ pub struct Permissions {
     pub shared: bool
 }
 
+#[derive(Debug)]
 pub struct Device {
     pub major: i32,
     pub minor: i32,
 }
 
 impl MemoryMap {
-    fn from(line: &str) -> MemoryMap {
+    pub fn from(line: &str) -> MemoryMap {
         // example input from `man proc_pid_maps`:
         // address           perms offset  dev   inode       pathname
         // 00400000-00452000 r-xp 00000000 08:02 173521      /usr/bin/dbus-daemon

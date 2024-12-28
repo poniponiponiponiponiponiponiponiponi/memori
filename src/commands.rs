@@ -60,7 +60,7 @@ pub struct TypeArgs {
 #[derive(Debug, Args)]
 pub struct ProcessArgs {
     #[clap(required = true)]
-    pub pid: i32,
+    pub pid: usize,
 }
 
 #[derive(Debug, Clone, ValueEnum)]

@@ -1,4 +1,5 @@
-use crate::commands::Cli;
+use crate::commands::{Cli, Command};
+use crate::context::Context;
 
 use clap::Parser;
 use rustyline::error::ReadlineError;
@@ -43,17 +44,23 @@ impl<'a> Repl<'a> {
         }
     }
 
-    pub fn eval(&mut self) {
-        
+    pub fn eval(&mut self, cmd: &Command, ctx: &mut Context) {
+        match cmd {
+            Command::Process(process_args) => {
+                ctx.process(process_args);
+            },
+            _ => panic!("Impossible command")
+        }
     }
 
     pub fn repl(&mut self) {
+        let mut ctx = Context::new();
         loop {
             match self.read() {
                 Some(line) => {
                     let cli = Cli::try_parse_from(line.split_whitespace());
                     if let Ok(cli) = cli {
-                        cli.exec();
+                        self.eval(&cli.command, &mut ctx);
                     } else if let Err(e) = cli {
                         eprintln!("{}", e.render());
                     };
