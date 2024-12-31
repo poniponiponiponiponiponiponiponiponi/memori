@@ -4,18 +4,10 @@ use crate::addresses::{Addresses, AddrsSimple};
 
 use std::io;
 
-pub enum CtxAddrs {
-    None,
-    AddrsI32(AddrsSimple<i32>),
-    AddrsU32(AddrsSimple<u32>),
-    AddrsI16(AddrsSimple<i16>),
-    AddrsU16(AddrsSimple<u16>),
-}
-
 pub struct Context {
     pub quit: bool,
     pub process: Option<Process>,
-    pub addrs: CtxAddrs,
+    pub addrs: Option<Box<dyn Addresses>>,
 }
 
 impl Context {
@@ -23,7 +15,7 @@ impl Context {
         Context {
             process: None,
             quit: false,
-            addrs: CtxAddrs::None,
+            addrs: None,
         }
     }
 
@@ -40,27 +32,24 @@ impl Context {
     pub fn change_type(&mut self, args: &TypeArgs) {
         match args.val_type {
             ValType::I32 => {
-                self.addrs = CtxAddrs::AddrsI32(AddrsSimple::<i32>::new());
+                self.addrs = Some(Box::new(AddrsSimple::<i32>::new()));
             },
             ValType::U32 => {
-                self.addrs = CtxAddrs::AddrsU32(AddrsSimple::<u32>::new());
+                self.addrs = Some(Box::new(AddrsSimple::<u32>::new()));
             },
             ValType::I16 => {
-                self.addrs = CtxAddrs::AddrsI16(AddrsSimple::<i16>::new());
+                self.addrs = Some(Box::new(AddrsSimple::<i16>::new()));
             },
             ValType::U16 => {
-                self.addrs = CtxAddrs::AddrsU16(AddrsSimple::<u16>::new());
+                self.addrs = Some(Box::new(AddrsSimple::<u16>::new()));
             },
         }
     }
 
     pub fn get_type(&self) -> String {
         match &self.addrs {
-            CtxAddrs::None => "none".to_string(),
-            CtxAddrs::AddrsI32(addrs) => addrs.get_type(),
-            CtxAddrs::AddrsU32(addrs) => addrs.get_type(),
-            CtxAddrs::AddrsI16(addrs) => addrs.get_type(),
-            CtxAddrs::AddrsU16(addrs) => addrs.get_type(),
+            None => "none".to_string(),
+            Some(addrs) => addrs.get_type(),
         }
     }
 }
