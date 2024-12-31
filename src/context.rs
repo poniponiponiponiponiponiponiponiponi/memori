@@ -10,7 +10,10 @@ pub struct Context {
 
 impl Context {
     pub fn new() -> Context {
-        Context { process: None, quit: false }
+        Context {
+            process: None,
+            quit: false,
+        }
     }
 
     pub fn process(&mut self, args: &ProcessArgs) -> io::Result<()> {

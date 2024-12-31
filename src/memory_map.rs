@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use std::cmp::{Eq, PartialEq};
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct MemoryMap {
     pub addr_start: usize,
     pub addr_end: usize,
@@ -9,7 +11,7 @@ pub struct MemoryMap {
     pub pathname: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Permissions {
     pub read: bool,
     pub write: bool,
@@ -18,7 +20,7 @@ pub struct Permissions {
     pub shared: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Device {
     pub major: i32,
     pub minor: i32,
@@ -80,5 +82,33 @@ impl Device {
         let major = i32::from_str_radix(major, 16).expect("major is not a hex number");
         let minor = i32::from_str_radix(minor, 16).expect("minor is not a hex number");
         Device { major, minor }
+    }
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn memory_map_from_test() {
+        let line = "00400000-00452000 r-xp 00000000 08:02 173521      /usr/bin/dbus-daemon";
+        let mm = MemoryMap::from(&line);
+        assert_eq!(
+            mm,
+            MemoryMap {
+                addr_start: 0x400000,
+                addr_end: 0x452000,
+                perms: Permissions {
+                    read: true,
+                    write: false,
+                    execute: true,
+                    private: true,
+                    shared: false
+                },
+                offset: 0x0,
+                dev: Device { major: 0x08, minor: 0x02 },
+                inode: 173521,
+                pathname: "/usr/bin/dbus-daemon".to_string(),
+            }
+        )
     }
 }

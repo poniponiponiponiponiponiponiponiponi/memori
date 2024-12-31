@@ -1,8 +1,8 @@
 use crate::memory_map::MemoryMap;
 
 use std::fs::File;
-use std::io::{self, Read};
-use std::path::{Path, PathBuf};
+use std::io::{self};
+use std::path::PathBuf;
 
 pub struct Process {
     pub pid: usize,
