@@ -66,6 +66,13 @@ impl<'a> Repl<'a> {
                     };
                 }
             },
+            Command::Type(type_args) => {
+                ctx.change_type(type_args);
+                return Message {
+                    message: format!("changed type successfuly to {}", ctx.get_type()),
+                    is_error: false,
+                }
+            }
             Command::Exit => {
                 ctx.quit = true;
                 return Message {
