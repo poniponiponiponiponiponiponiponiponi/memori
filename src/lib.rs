@@ -1,3 +1,4 @@
+pub mod addresses;
 pub mod commands;
 pub mod context;
 pub mod memory_map;
