@@ -54,13 +54,11 @@ pub enum ValType {
 
 #[derive(Debug, Args)]
 pub struct TypeArgs {
-    #[clap(required = true)]
     pub val_type: ValType,
 }
 
 #[derive(Debug, Args)]
 pub struct ProcessArgs {
-    #[clap(required = true)]
     pub pid: usize,
 }
 
@@ -84,39 +82,35 @@ pub enum FilterOperator {
     /// !=
     #[value(alias("!="), hide = false)]
     NotEqual,
+    Changed,
+    NotChanged,
+    Unknown
 }
 
 #[derive(Debug, Args)]
 pub struct FilterArgs {
-    #[clap(required = true)]
     pub operator: FilterOperator,
-    #[clap(required = true)]
-    pub operand: String,
+    pub operand: Option<String>,
 }
 
 #[derive(Debug, Args)]
 pub struct SelectArgs {
-    #[clap(required = true)]
     pub to_select: usize,
 }
 
 #[derive(Debug, Args)]
 pub struct UnselectArgs {
-    #[clap(required = true)]
     pub to_unselect: usize,
 }
 
 #[derive(Debug, Args)]
 pub struct SetArgs {
-    #[clap(required = true)]
     pub selected: usize,
-    #[clap(required = true)]
     pub value: String,
 }
 
 #[derive(Debug, Args)]
 pub struct FreezeArgs {
-    #[clap(required = true)]
     pub selected: usize,
 }
 

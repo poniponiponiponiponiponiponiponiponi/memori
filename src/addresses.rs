@@ -1,10 +1,9 @@
-use std::iter;
-use std::slice;
 use std::any;
 
 pub trait Addresses {
     fn new() -> Self where Self: Sized;
     fn get_type(&self) -> String;
+    fn len(&self) -> usize;
 }
 
 /// The fastest (probably?) but least memory efficient implementation
@@ -26,6 +25,10 @@ impl<T: Copy> Addresses for AddrsSimple<T> {
 
     fn get_type(&self) -> String {
         any::type_name::<T>().to_string()
+    }
+
+    fn len(&self) -> usize {
+        self.values.len()
     }
 }
 
