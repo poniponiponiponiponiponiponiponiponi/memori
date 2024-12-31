@@ -4,9 +4,7 @@ use std::slice;
 pub trait Addresses<'a, T: 'a> {
     type Iter: Iterator<Item = (&'a T, &'a usize)>;
 
-    // Method to return the iterator
     fn iter(&'a self) -> Self::Iter;
-    // pub fn iter() -> Iterator<Item = (T, usize)>;
 }
 
 /// The fastest (probably?) but least memory efficient implementation
