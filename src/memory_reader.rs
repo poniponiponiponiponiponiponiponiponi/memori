@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn memory_reader_simple_test() {
-        let self_proc = Process::try_new(process::id() as usize).unwrap();
+        let self_proc = Process::try_new(process::id()).unwrap();
         let mut mem_reader = MemoryReaderSimple::new(&self_proc);
         let a = 32;
         let a_addr = &a as *const i32;

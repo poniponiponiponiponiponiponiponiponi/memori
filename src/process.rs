@@ -5,13 +5,13 @@ use std::io::{self};
 use std::path::PathBuf;
 
 pub struct Process {
-    pub pid: usize,
+    pub pid: u32,
     pub command: String,
     pub memory_maps: Vec<MemoryMap>,
 }
 
 impl Process {
-    pub fn try_new(pid: usize) -> io::Result<Process> {
+    pub fn try_new(pid: u32) -> io::Result<Process> {
         let cmd_path = PathBuf::from("/proc").join(pid.to_string()).join("cmdline");
         let cmd_file = File::open(cmd_path)?;
         let content = io::read_to_string(cmd_file)?;
