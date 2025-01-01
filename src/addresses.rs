@@ -30,13 +30,13 @@ impl ScanExpr {
     /// the expression is true execute function f_if_true. Typically
     /// we want the function to add filtered values to some other
     /// container
-    fn eval_expr<F, T, I1, I2>(&self, f_if_true: &mut F, vals: I1, addrs: I2)
+    fn eval_expr<F, T, ValIter, AddrIter>(&self, f_if_true: &mut F, vals: ValIter, addrs: AddrIter)
     where
         F: FnMut(T, usize),
         T: FromStr + Copy + PartialOrd + PartialEq,
         T::Err: Debug,
-        I1: Iterator<Item = T>,
-        I2: Iterator<Item = usize>,
+        ValIter: Iterator<Item = T>,
+        AddrIter: Iterator<Item = usize>,
     {
         match self {
             Self::Less(operand) => {
@@ -53,18 +53,18 @@ impl ScanExpr {
         }
     }
 
-    fn loop_over<F, FExpr, T, I1, I2>(
+    fn loop_over<F, FExpr, T, ValIter, AddrIter>(
         f_if_true: &mut F,
         f_expr: FExpr,
-        vals: I1,
-        addrs: I2,
+        vals: ValIter,
+        addrs: AddrIter,
         operand: T,
     ) where
         F: FnMut(T, usize),
         FExpr: Fn(T, T) -> bool,
         T: Copy,
-        I1: Iterator<Item = T>,
-        I2: Iterator<Item = usize>,
+        ValIter: Iterator<Item = T>,
+        AddrIter: Iterator<Item = usize>,
     {
         vals.zip(addrs)
             .filter(|(val, _)| f_expr(*val, operand))
