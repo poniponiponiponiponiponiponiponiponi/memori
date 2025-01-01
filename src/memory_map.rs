@@ -105,7 +105,10 @@ mod tests {
                     shared: false
                 },
                 offset: 0x0,
-                dev: Device { major: 0x08, minor: 0x02 },
+                dev: Device {
+                    major: 0x08,
+                    minor: 0x02
+                },
                 inode: 173521,
                 pathname: "/usr/bin/dbus-daemon".to_string(),
             }

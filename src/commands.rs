@@ -84,7 +84,7 @@ pub enum FilterOperator {
     NotEqual,
     Changed,
     NotChanged,
-    Unknown
+    Unknown,
 }
 
 #[derive(Debug, Args)]

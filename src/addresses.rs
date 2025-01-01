@@ -1,10 +1,12 @@
-use std::{any, str::FromStr};
 use std::fmt::Debug;
+use std::{any, str::FromStr};
 
 use crate::process::Process;
 
 pub trait Addresses {
-    fn new() -> Self where Self: Sized;
+    fn new() -> Self
+    where
+        Self: Sized;
     fn get_type(&self) -> String;
     fn len(&self) -> usize;
     fn scan(&self, process: &Process, expr: &ScanExpr) -> Box<dyn Addresses>;
@@ -33,38 +35,38 @@ impl ScanExpr {
         F: FnMut(T, usize),
         T: FromStr + Copy + PartialOrd + PartialEq,
         T::Err: Debug,
-        I1: Iterator<Item=T>,
-        I2: Iterator<Item=usize>
+        I1: Iterator<Item = T>,
+        I2: Iterator<Item = usize>,
     {
         match self {
             Self::Less(operand) => {
                 let operand = operand.parse::<T>().unwrap();
-                let f_expr = |lhs, rhs| {
-                    lhs < rhs
-                };
+                let f_expr = |lhs, rhs| lhs < rhs;
                 Self::loop_over(f_if_true, f_expr, vals, addrs, operand);
-            },
+            }
             Self::LessEqual(operand) => {
                 let operand = operand.parse::<T>().unwrap();
-                let f_expr = |lhs, rhs| {
-                    lhs <= rhs
-                };
+                let f_expr = |lhs, rhs| lhs <= rhs;
                 Self::loop_over(f_if_true, f_expr, vals, addrs, operand);
             }
             _ => panic!("expr doesn't exist"),
         }
     }
 
-    fn loop_over<F, FExpr, T, I1, I2>(f_if_true: &mut F, f_expr: FExpr, vals: I1, addrs: I2, operand: T)
-    where
+    fn loop_over<F, FExpr, T, I1, I2>(
+        f_if_true: &mut F,
+        f_expr: FExpr,
+        vals: I1,
+        addrs: I2,
+        operand: T,
+    ) where
         F: FnMut(T, usize),
         FExpr: Fn(T, T) -> bool,
         T: Copy,
-        I1: Iterator<Item=T>,
-        I2: Iterator<Item=usize>
+        I1: Iterator<Item = T>,
+        I2: Iterator<Item = usize>,
     {
-        vals
-            .zip(addrs)
+        vals.zip(addrs)
             .filter(|(val, _)| f_expr(*val, operand))
             .for_each(|(val, addr)| f_if_true(val, addr));
     }

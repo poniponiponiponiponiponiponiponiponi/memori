@@ -1,6 +1,6 @@
+use crate::addresses::{Addresses, AddrsSimple};
 use crate::commands::{ProcessArgs, TypeArgs, ValType};
 use crate::process::Process;
-use crate::addresses::{Addresses, AddrsSimple};
 
 use std::io;
 
@@ -33,16 +33,16 @@ impl Context {
         match args.val_type {
             ValType::I32 => {
                 self.addrs = Some(Box::new(AddrsSimple::<i32>::new()));
-            },
+            }
             ValType::U32 => {
                 self.addrs = Some(Box::new(AddrsSimple::<u32>::new()));
-            },
+            }
             ValType::I16 => {
                 self.addrs = Some(Box::new(AddrsSimple::<i16>::new()));
-            },
+            }
             ValType::U16 => {
                 self.addrs = Some(Box::new(AddrsSimple::<u16>::new()));
-            },
+            }
         }
     }
 

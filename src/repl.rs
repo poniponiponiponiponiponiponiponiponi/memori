@@ -71,7 +71,7 @@ impl<'a> Repl<'a> {
                 return Message {
                     message: format!("changed type successfuly to {}", ctx.get_type()),
                     is_error: false,
-                }
+                };
             }
             Command::Exit => {
                 ctx.quit = true;
