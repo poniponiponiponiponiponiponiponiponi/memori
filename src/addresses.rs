@@ -1,7 +1,7 @@
 use std::fmt::Debug;
-use std::{any, str::FromStr};
-use std::mem;
 use std::iter;
+use std::mem;
+use std::{any, str::FromStr};
 
 use crate::context::Context;
 use crate::memory_reader::{FromLeBytes, MemoryReader, MemoryReaderSimple};
@@ -35,14 +35,19 @@ impl ScanExpr {
     /// the expression is true execute function f_if_true. Typically
     /// we want the function to add filtered values to some other
     /// container
-    pub fn eval_expr<F, T, ValIter, AddrIter>(&self, ctx: &Context, f_if_true: &mut F, vals: ValIter, addrs: AddrIter)
-    where
+    pub fn eval_expr<F, T, ValIter, AddrIter>(
+        &self,
+        ctx: &Context,
+        f_if_true: &mut F,
+        vals: ValIter,
+        addrs: AddrIter,
+    ) where
         F: FnMut(T, usize),
         T: FromStr + Copy + PartialOrd + PartialEq + Debug + FromLeBytes,
         T::Err: Debug,
         ValIter: Iterator<Item = T>,
         AddrIter: Iterator<Item = usize>,
-    [(); mem::size_of::<T>()]:
+        [(); mem::size_of::<T>()]:,
     {
         match self {
             Self::Equal(operand) => {
@@ -114,7 +119,7 @@ impl ScanExpr {
 pub struct AddrsSimple<T, U>
 where
     T: FromStr + Copy + PartialOrd + PartialEq,
-    U: MemoryReader
+    U: MemoryReader,
 {
     values: Vec<T>,
     addresses: Vec<usize>,
@@ -126,7 +131,7 @@ where
     T: FromLeBytes + Debug + FromStr + Copy + PartialOrd + PartialEq + 'static,
     T::Err: Debug,
     U: MemoryReader + 'static,
-[(); mem::size_of::<T>()]:
+    [(); mem::size_of::<T>()]:,
 {
     fn new(process: &Process) -> Self {
         Self {
@@ -155,7 +160,6 @@ where
             self.initial_scan(ctx, expr);
         }
     }
-
 }
 
 impl<T, U> AddrsSimple<T, U>
@@ -163,7 +167,7 @@ where
     T: FromLeBytes + Debug + FromStr + Copy + PartialOrd + PartialEq + 'static,
     T::Err: Debug,
     U: MemoryReader + 'static,
-[(); mem::size_of::<T>()]:
+    [(); mem::size_of::<T>()]:,
 {
     fn noninitial_scan(&mut self, ctx: &Context, expr: &ScanExpr) {
         let old_vals = mem::take(&mut self.values);
@@ -172,7 +176,12 @@ where
             self.values.push(val);
             self.addresses.push(addr);
         };
-        expr.eval_expr(ctx, &mut f_if_true, old_vals.into_iter(), old_addrs.into_iter());
+        expr.eval_expr(
+            ctx,
+            &mut f_if_true,
+            old_vals.into_iter(),
+            old_addrs.into_iter(),
+        );
     }
 
     fn initial_scan(&mut self, ctx: &Context, expr: &ScanExpr) {
@@ -183,15 +192,9 @@ where
             let step = std::mem::size_of::<T>();
             let addrs = (memory_map.addr_start..memory_map.addr_end).step_by(step);
             let mut addrs_cpy = addrs.clone();
-            let vals = iter::from_fn(|| {
-                match addrs_cpy.next() {
-                    Some(addr) => {
-                        Some(self.memory_reader.read::<T>(addr))
-                    },
-                    None => {
-                        None
-                    }
-                }
+            let vals = iter::from_fn(|| match addrs_cpy.next() {
+                Some(addr) => Some(self.memory_reader.read::<T>(addr)),
+                None => None,
             });
             let mut f_if_true = |val: T, addr: usize| {
                 self.values.push(val);
@@ -203,8 +206,8 @@ where
 }
 
 mod tests {
-    use crate::memory_reader::MemoryReaderSimple;
     use super::*;
+    use crate::memory_reader::MemoryReaderSimple;
     use std::process;
 
     #[test]
@@ -216,7 +219,7 @@ mod tests {
         let scan_expr = ScanExpr::Equal(weird_numbers[0].to_string());
         let mut addrs = AddrsSimple::<i32, MemoryReaderSimple>::new(process);
         addrs.scan(&ctx, &scan_expr);
-        
+
         assert!(addrs.len() >= weird_numbers.len());
 
         let addr1 = (&weird_numbers[0] as *const i32) as usize;

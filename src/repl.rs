@@ -66,7 +66,7 @@ impl<'a> Repl<'a> {
                         is_error: true,
                     };
                 }
-            }
+            },
             Command::Type(type_args) => {
                 ctx.change_type(type_args);
                 return Message {
@@ -82,10 +82,12 @@ impl<'a> Repl<'a> {
                     ctx.addrs = Some(addrs);
                 }
                 return Message {
-                    message: format!("scanner found {} addresses",
-                                     ctx.addrs.as_ref().unwrap().len()),
-                    is_error: false
-                }
+                    message: format!(
+                        "scanner found {} addresses",
+                        ctx.addrs.as_ref().unwrap().len()
+                    ),
+                    is_error: false,
+                };
             }
             Command::Exit => {
                 ctx.quit = true;

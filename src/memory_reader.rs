@@ -2,8 +2,8 @@ use crate::process::Process;
 
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use std::path::PathBuf;
 use std::mem;
+use std::path::PathBuf;
 
 pub trait MemoryReader {
     fn new(process: &Process) -> Self;
