@@ -3,7 +3,8 @@ use std::{any, str::FromStr};
 use std::mem;
 use std::iter;
 
-use crate::memory_reader::{FromLeBytes, MemoryReader};
+use crate::context::Context;
+use crate::memory_reader::{FromLeBytes, MemoryReader, MemoryReaderSimple};
 use crate::process::Process;
 
 pub trait Addresses {
@@ -12,7 +13,7 @@ pub trait Addresses {
         Self: Sized;
     fn get_type(&self) -> String;
     fn len(&self) -> usize;
-    fn scan(&mut self, process: &Process, expr: &ScanExpr) -> Box<dyn Addresses>;
+    fn scan(&mut self, ctx: &Context, expr: &ScanExpr);
     fn get_addrs(&self) -> Vec<usize>;
 }
 
@@ -34,49 +35,73 @@ impl ScanExpr {
     /// the expression is true execute function f_if_true. Typically
     /// we want the function to add filtered values to some other
     /// container
-    pub fn eval_expr<F, T, ValIter, AddrIter>(&self, f_if_true: &mut F, vals: ValIter, addrs: AddrIter)
+    pub fn eval_expr<F, T, ValIter, AddrIter>(&self, ctx: &Context, f_if_true: &mut F, vals: ValIter, addrs: AddrIter)
     where
         F: FnMut(T, usize),
-        T: FromStr + Copy + PartialOrd + PartialEq + Debug,
+        T: FromStr + Copy + PartialOrd + PartialEq + Debug + FromLeBytes,
         T::Err: Debug,
         ValIter: Iterator<Item = T>,
         AddrIter: Iterator<Item = usize>,
+    [(); mem::size_of::<T>()]:
     {
         match self {
+            Self::Equal(operand) => {
+                let operand = operand.parse::<T>().unwrap();
+                let mut f_expr = |val, _| val == operand;
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
+            }
+            Self::NotEqual(operand) => {
+                let operand = operand.parse::<T>().unwrap();
+                let mut f_expr = |val, _| val != operand;
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
+            }
             Self::Less(operand) => {
                 let operand = operand.parse::<T>().unwrap();
-                let f_expr = |lhs, rhs| lhs < rhs;
-                Self::loop_over(f_if_true, f_expr, vals, addrs, operand);
+                let mut f_expr = |val, _| val < operand;
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
             }
             Self::LessEqual(operand) => {
                 let operand = operand.parse::<T>().unwrap();
-                let f_expr = |lhs, rhs| lhs <= rhs;
-                Self::loop_over(f_if_true, f_expr, vals, addrs, operand);
+                let mut f_expr = |val, _| val <= operand;
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
             }
-            Self::Equal(operand) => {
+            Self::Greater(operand) => {
                 let operand = operand.parse::<T>().unwrap();
-                let f_expr = |lhs, rhs| lhs == rhs;
-                Self::loop_over(f_if_true, f_expr, vals, addrs, operand);
+                let mut f_expr = |val, _| val > operand;
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
             }
+            Self::GreaterEqual(operand) => {
+                let operand = operand.parse::<T>().unwrap();
+                let mut f_expr = |val, _| val >= operand;
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
+            }
+            Self::Changed => {
+                let mut mem_reader = MemoryReaderSimple::new(ctx.process.as_ref().unwrap());
+                let mut f_expr = move |val, addr| val != mem_reader.read(addr);
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
+            }
+            // Self::Unknown => {
+            //     let f_expr = |lhs, rhs| true;
+            //     Self::loop_over(f_if_true, f_expr, vals, addrs, T::defa);
+            // }
             _ => panic!("expr doesn't exist"),
         }
     }
 
     fn loop_over<F, FExpr, T, ValIter, AddrIter>(
         f_if_true: &mut F,
-        f_expr: FExpr,
+        f_expr: &mut FExpr,
         vals: ValIter,
         addrs: AddrIter,
-        operand: T,
     ) where
         F: FnMut(T, usize),
-        FExpr: Fn(T, T) -> bool,
+        FExpr: FnMut(T, usize) -> bool,
         T: Copy + Debug,
         ValIter: Iterator<Item = T>,
         AddrIter: Iterator<Item = usize>,
     {
         vals.zip(addrs)
-            .filter(|(val, _)| f_expr(*val, operand))
+            .filter(|(val, addr)| f_expr(*val, *addr))
             .for_each(|(val, addr)| f_if_true(val, addr));
     }
 }
@@ -123,11 +148,11 @@ where
         self.values.len()
     }
 
-    fn scan(&mut self, process: &Process, expr: &ScanExpr) -> Box<dyn Addresses> {
+    fn scan(&mut self, ctx: &Context, expr: &ScanExpr) {
         if self.values.len() != 0 {
-            self.noninitial_scan(process, expr)
+            self.noninitial_scan(ctx, expr);
         } else {
-            self.initial_scan(process, expr)
+            self.initial_scan(ctx, expr);
         }
     }
 
@@ -140,24 +165,18 @@ where
     U: MemoryReader + 'static,
 [(); mem::size_of::<T>()]:
 {
-    fn noninitial_scan(&self, process: &Process, expr: &ScanExpr) -> Box<dyn Addresses> {
-        let mut ret = Box::new(AddrsSimple::<T, U>::new(&process));
-        let mut new_vals = Vec::<T>::new();
-        let mut new_addrs = Vec::<usize>::new();
+    fn noninitial_scan(&mut self, ctx: &Context, expr: &ScanExpr) {
+        let old_vals = mem::take(&mut self.values);
+        let old_addrs = mem::take(&mut self.addresses);
         let mut f_if_true = |val: T, addr: usize| {
-            new_vals.push(val);
-            new_addrs.push(addr);
+            self.values.push(val);
+            self.addresses.push(addr);
         };
-        // TODO remove clone
-        expr.eval_expr(&mut f_if_true, self.values.clone().into_iter(), self.addresses.clone().into_iter());
-        ret.values = new_vals;
-        ret.addresses = new_addrs;
-        ret
+        expr.eval_expr(ctx, &mut f_if_true, old_vals.into_iter(), old_addrs.into_iter());
     }
 
-    fn initial_scan(&mut self, process: &Process, expr: &ScanExpr) -> Box<dyn Addresses> {
-        let mut ret = Box::new(AddrsSimple::<T, U>::new(&process));
-        for memory_map in process.memory_maps.iter() {
+    fn initial_scan(&mut self, ctx: &Context, expr: &ScanExpr) {
+        for memory_map in ctx.process.as_ref().unwrap().memory_maps.iter() {
             if !memory_map.perms.read {
                 continue;
             }
@@ -174,17 +193,12 @@ where
                     }
                 }
             });
-            let mut new_vals = Vec::new();
-            let mut new_addrs = Vec::new();
             let mut f_if_true = |val: T, addr: usize| {
-                new_vals.push(val);
-                new_addrs.push(addr);
+                self.values.push(val);
+                self.addresses.push(addr);
             };
-            expr.eval_expr(&mut f_if_true, vals, addrs);
-            ret.values.append(&mut new_vals);
-            ret.addresses.append(&mut new_addrs);
+            expr.eval_expr(ctx, &mut f_if_true, vals, addrs);
         }
-        ret
     }
 }
 
@@ -195,19 +209,21 @@ mod tests {
 
     #[test]
     fn scan_addrs_simple() {
-        let self_proc = Process::try_new(process::id()).unwrap();
+        let mut ctx = Context::new();
+        ctx.process = Some(Process::try_new(process::id()).unwrap());
+        let process = ctx.process.as_ref().unwrap();
         let weird_numbers = vec![0xc0ffee, 0xc0ffee, 0xc0ffee];
         let scan_expr = ScanExpr::Equal(weird_numbers[0].to_string());
-        let mut addrs = AddrsSimple::<i32, MemoryReaderSimple>::new(&self_proc);
-        let after_scan = addrs.scan(&self_proc, &scan_expr);
+        let mut addrs = AddrsSimple::<i32, MemoryReaderSimple>::new(process);
+        addrs.scan(&ctx, &scan_expr);
         
-        assert!(after_scan.len() >= weird_numbers.len());
+        assert!(addrs.len() >= weird_numbers.len());
 
         let addr1 = (&weird_numbers[0] as *const i32) as usize;
         let addr2 = (&weird_numbers[1] as *const i32) as usize;
         let addr3 = (&weird_numbers[2] as *const i32) as usize;
-        assert!(after_scan.get_addrs().contains(&addr1));
-        assert!(after_scan.get_addrs().contains(&addr2));
-        assert!(after_scan.get_addrs().contains(&addr3));
+        assert!(addrs.get_addrs().contains(&addr1));
+        assert!(addrs.get_addrs().contains(&addr2));
+        assert!(addrs.get_addrs().contains(&addr3));
     }
 }

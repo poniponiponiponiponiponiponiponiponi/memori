@@ -76,7 +76,11 @@ impl<'a> Repl<'a> {
             }
             Command::Filter(filter_args) => {
                 let scan_expr = util::filter_args_to_scan_expr(&filter_args);
-                ctx.addrs.as_mut().unwrap().scan(ctx.process.as_ref().unwrap(), &scan_expr);
+                // Little weird to satisfy the borrow checker
+                if let Some(mut addrs) = ctx.addrs.take() {
+                    addrs.scan(ctx, &scan_expr);
+                    ctx.addrs = Some(addrs);
+                }
                 return Message {
                     message: format!("scanner found {} addresses",
                                      ctx.addrs.as_ref().unwrap().len()),
