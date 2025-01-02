@@ -46,10 +46,16 @@ pub enum Command {
 
 #[derive(Debug, Clone, ValueEnum)]
 pub enum ValType {
+    I128,
+    U128,
+    I64,
+    U64,
     I32,
     U32,
     I16,
     U16,
+    I8,
+    U8,
 }
 
 #[derive(Debug, Args)]

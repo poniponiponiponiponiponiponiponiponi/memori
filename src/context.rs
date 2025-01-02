@@ -33,6 +33,18 @@ impl Context {
     pub fn change_type(&mut self, args: &TypeArgs) {
         let proc = &self.process.as_ref().unwrap();
         match args.val_type {
+            ValType::I128 => {
+                self.addrs = Some(Box::new(AddrsSimple::<i128, MemoryReaderSimple>::new(proc)));
+            }
+            ValType::U128 => {
+                self.addrs = Some(Box::new(AddrsSimple::<u128, MemoryReaderSimple>::new(proc)));
+            }
+            ValType::I64 => {
+                self.addrs = Some(Box::new(AddrsSimple::<i64, MemoryReaderSimple>::new(proc)));
+            }
+            ValType::U64 => {
+                self.addrs = Some(Box::new(AddrsSimple::<u64, MemoryReaderSimple>::new(proc)));
+            }
             ValType::I32 => {
                 self.addrs = Some(Box::new(AddrsSimple::<i32, MemoryReaderSimple>::new(proc)));
             }
@@ -44,6 +56,12 @@ impl Context {
             }
             ValType::U16 => {
                 self.addrs = Some(Box::new(AddrsSimple::<u16, MemoryReaderSimple>::new(proc)));
+            }
+            ValType::I8 => {
+                self.addrs = Some(Box::new(AddrsSimple::<i8, MemoryReaderSimple>::new(proc)));
+            }
+            ValType::U8 => {
+                self.addrs = Some(Box::new(AddrsSimple::<u8, MemoryReaderSimple>::new(proc)));
             }
         }
     }

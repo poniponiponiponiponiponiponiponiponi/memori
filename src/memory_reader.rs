@@ -35,6 +35,10 @@ macro_rules! impl_from_le_bytes {
     };
 }
 
+impl_from_le_bytes!(i128);
+impl_from_le_bytes!(u128);
+impl_from_le_bytes!(i64);
+impl_from_le_bytes!(u64);
 impl_from_le_bytes!(i32);
 impl_from_le_bytes!(u32);
 impl_from_le_bytes!(i16);
