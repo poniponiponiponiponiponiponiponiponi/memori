@@ -15,6 +15,10 @@ pub trait Addresses {
     fn len(&self) -> usize;
     fn scan(&mut self, ctx: &Context, expr: &ScanExpr);
     fn get_addrs(&self) -> Vec<usize>;
+    fn clone_box(&self) -> Box<dyn Addresses>;
+    fn get_vals(&self) -> Vec<String>;
+    // address, value when scanned, current value
+    fn get_vals_to_print(&mut self) -> Vec<(usize, String, String)>;
 }
 
 #[derive(Debug)]
@@ -27,6 +31,7 @@ pub enum ScanExpr {
     NotEqual(String),
     Changed,
     NotChanged,
+    Refresh,
     Unknown,
 }
 
@@ -85,11 +90,15 @@ impl ScanExpr {
                 let mut f_expr = move |val, addr| val != mem_reader.read(addr);
                 Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
             }
-            // Self::Unknown => {
-            //     let f_expr = |lhs, rhs| true;
-            //     Self::loop_over(f_if_true, f_expr, vals, addrs, T::defa);
-            // }
-            _ => panic!("expr doesn't exist"),
+            Self::NotChanged => {
+                let mut mem_reader = MemoryReaderSimple::new(ctx.process.as_ref().unwrap());
+                let mut f_expr = move |val, addr| val == mem_reader.read(addr);
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
+            }
+            Self::Refresh | Self::Unknown => {
+                let mut f_expr = move |_, _| true;
+                Self::loop_over(f_if_true, &mut f_expr, vals, addrs);
+            }
         }
     }
 
@@ -128,7 +137,7 @@ where
 
 impl<T, U> Addresses for AddrsSimple<T, U>
 where
-    T: FromLeBytes + Debug + FromStr + Copy + PartialOrd + PartialEq + 'static,
+    T: FromLeBytes + Debug + FromStr + Copy + PartialOrd + PartialEq + ToString + 'static,
     T::Err: Debug,
     U: MemoryReader + 'static,
     [(); mem::size_of::<T>()]:,
@@ -141,8 +150,28 @@ where
         }
     }
 
+    fn get_vals_to_print(&mut self) -> Vec<(usize, String, String)> {
+        self.addresses
+            .iter()
+            .zip(self.values.iter())
+            .map(|(&addr, val)| (addr, val.to_string(), self.memory_reader.read(addr).to_string()))
+            .collect()
+    }
+
+    fn clone_box(&self) -> Box<dyn Addresses> {
+        Box::new(Self {
+            values: self.values.clone(),
+            addresses: self.addresses.clone(),
+            memory_reader: self.memory_reader.clone(),
+        })
+    
+}
     fn get_addrs(&self) -> Vec<usize> {
         self.addresses.clone()
+    }
+
+    fn get_vals(&self) -> Vec<String> {
+        self.values.iter().map(|v| v.to_string()).collect()
     }
 
     fn get_type(&self) -> String {

@@ -5,7 +5,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::mem;
 use std::path::PathBuf;
 
-pub trait MemoryReader {
+pub trait MemoryReader: Clone {
     fn new(process: &Process) -> Self;
     fn read<T: Copy + FromLeBytes>(&mut self, addr: usize) -> T
     where
@@ -45,6 +45,12 @@ impl_from_le_bytes!(i16);
 impl_from_le_bytes!(u16);
 impl_from_le_bytes!(i8);
 impl_from_le_bytes!(u8);
+
+impl Clone for MemoryReaderSimple {
+    fn clone(&self) -> Self {
+        MemoryReaderSimple { mem_file: self.mem_file.try_clone().unwrap() }
+    }
+}
 
 impl MemoryReader for MemoryReaderSimple {
     fn new(process: &Process) -> Self {

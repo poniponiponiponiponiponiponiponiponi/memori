@@ -89,6 +89,13 @@ impl<'a> Repl<'a> {
                     is_error: false,
                 };
             }
+            Command::Print => {
+                util::print_addrs(ctx.addrs.as_mut().unwrap());
+                return Message {
+                    message: "".to_string(),
+                    is_error: false,
+                }
+            }
             Command::Exit => {
                 ctx.quit = true;
                 return Message {
