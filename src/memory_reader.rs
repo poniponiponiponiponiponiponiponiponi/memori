@@ -5,18 +5,18 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use std::mem;
 
-trait MemoryReader {
+pub trait MemoryReader {
     fn new(process: &Process) -> Self;
     fn read<T: Copy + FromLeBytes>(&mut self, addr: usize) -> T
     where
         [(); mem::size_of::<T>()]:;
 }
 
-struct MemoryReaderSimple {
+pub struct MemoryReaderSimple {
     mem_file: File,
 }
 
-trait FromLeBytes: Sized {
+pub trait FromLeBytes: Sized {
     fn from_le_bytes(bytes: &[u8]) -> Self;
 }
 

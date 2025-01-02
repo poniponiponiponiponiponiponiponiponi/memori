@@ -1,5 +1,6 @@
 use crate::commands::{Cli, Command};
 use crate::context::Context;
+use crate::util;
 
 use clap::Parser;
 use rustyline::error::ReadlineError;
@@ -65,13 +66,22 @@ impl<'a> Repl<'a> {
                         is_error: true,
                     };
                 }
-            },
+            }
             Command::Type(type_args) => {
                 ctx.change_type(type_args);
                 return Message {
                     message: format!("changed type successfuly to {}", ctx.get_type()),
                     is_error: false,
                 };
+            }
+            Command::Filter(filter_args) => {
+                let scan_expr = util::filter_args_to_scan_expr(&filter_args);
+                ctx.addrs.as_mut().unwrap().scan(ctx.process.as_ref().unwrap(), &scan_expr);
+                return Message {
+                    message: format!("scanner found {} addresses",
+                                     ctx.addrs.as_ref().unwrap().len()),
+                    is_error: false
+                }
             }
             Command::Exit => {
                 ctx.quit = true;

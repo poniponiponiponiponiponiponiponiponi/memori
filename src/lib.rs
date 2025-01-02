@@ -7,3 +7,4 @@ pub mod memory_map;
 pub mod memory_reader;
 pub mod process;
 pub mod repl;
+pub mod util;

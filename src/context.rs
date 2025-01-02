@@ -1,5 +1,6 @@
 use crate::addresses::{Addresses, AddrsSimple};
 use crate::commands::{ProcessArgs, TypeArgs, ValType};
+use crate::memory_reader::{MemoryReader, MemoryReaderSimple};
 use crate::process::Process;
 
 use std::io;
@@ -30,18 +31,19 @@ impl Context {
     }
 
     pub fn change_type(&mut self, args: &TypeArgs) {
+        let proc = &self.process.as_ref().unwrap();
         match args.val_type {
             ValType::I32 => {
-                self.addrs = Some(Box::new(AddrsSimple::<i32>::new()));
+                self.addrs = Some(Box::new(AddrsSimple::<i32, MemoryReaderSimple>::new(proc)));
             }
             ValType::U32 => {
-                self.addrs = Some(Box::new(AddrsSimple::<u32>::new()));
+                self.addrs = Some(Box::new(AddrsSimple::<u32, MemoryReaderSimple>::new(proc)));
             }
             ValType::I16 => {
-                self.addrs = Some(Box::new(AddrsSimple::<i16>::new()));
+                self.addrs = Some(Box::new(AddrsSimple::<i16, MemoryReaderSimple>::new(proc)));
             }
             ValType::U16 => {
-                self.addrs = Some(Box::new(AddrsSimple::<u16>::new()));
+                self.addrs = Some(Box::new(AddrsSimple::<u16, MemoryReaderSimple>::new(proc)));
             }
         }
     }
