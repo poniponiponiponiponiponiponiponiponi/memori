@@ -13,6 +13,7 @@ pub trait Addresses {
     fn get_type(&self) -> String;
     fn len(&self) -> usize;
     fn scan(&mut self, process: &Process, expr: &ScanExpr) -> Box<dyn Addresses>;
+    fn get_addrs(&self) -> Vec<usize>;
 }
 
 #[derive(Debug)]
@@ -50,6 +51,11 @@ impl ScanExpr {
             Self::LessEqual(operand) => {
                 let operand = operand.parse::<T>().unwrap();
                 let f_expr = |lhs, rhs| lhs <= rhs;
+                Self::loop_over(f_if_true, f_expr, vals, addrs, operand);
+            }
+            Self::Equal(operand) => {
+                let operand = operand.parse::<T>().unwrap();
+                let f_expr = |lhs, rhs| lhs == rhs;
                 Self::loop_over(f_if_true, f_expr, vals, addrs, operand);
             }
             _ => panic!("expr doesn't exist"),
@@ -105,6 +111,10 @@ where
         }
     }
 
+    fn get_addrs(&self) -> Vec<usize> {
+        self.addresses.clone()
+    }
+
     fn get_type(&self) -> String {
         any::type_name::<T>().to_string()
     }
@@ -148,7 +158,6 @@ where
     fn initial_scan(&mut self, process: &Process, expr: &ScanExpr) -> Box<dyn Addresses> {
         let mut ret = Box::new(AddrsSimple::<T, U>::new(&process));
         for memory_map in process.memory_maps.iter() {
-            dbg!(memory_map);
             if !memory_map.perms.read {
                 continue;
             }
@@ -187,9 +196,18 @@ mod tests {
     #[test]
     fn scan_addrs_simple() {
         let self_proc = Process::try_new(process::id()).unwrap();
-        let scan_expr = ScanExpr::Less("32".to_string());
+        let weird_numbers = vec![0xc0ffee, 0xc0ffee, 0xc0ffee];
+        let scan_expr = ScanExpr::Equal(weird_numbers[0].to_string());
         let mut addrs = AddrsSimple::<i32, MemoryReaderSimple>::new(&self_proc);
-        addrs.scan(&self_proc, &scan_expr);
-        dbg!(addrs.len());
+        let after_scan = addrs.scan(&self_proc, &scan_expr);
+        
+        assert!(after_scan.len() >= weird_numbers.len());
+
+        let addr1 = (&weird_numbers[0] as *const i32) as usize;
+        let addr2 = (&weird_numbers[1] as *const i32) as usize;
+        let addr3 = (&weird_numbers[2] as *const i32) as usize;
+        assert!(after_scan.get_addrs().contains(&addr1));
+        assert!(after_scan.get_addrs().contains(&addr2));
+        assert!(after_scan.get_addrs().contains(&addr3));
     }
 }

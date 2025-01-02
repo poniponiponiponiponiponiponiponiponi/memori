@@ -61,9 +61,14 @@ impl MemoryReader for MemoryReaderSimple {
             .expect("Unexpected error when seeking");
 
         let mut buffer = [0u8; mem::size_of::<T>()];
-        self.mem_file
-            .read_exact(&mut buffer)
-            .expect("Unexpected error when reading from memory");
+        // Fail silently when read is unsuccessful. This is for the
+        // rare case when address stops existing between scans, for
+        // example because a memory region got munmapped. We can check
+        // instead on every read if it was done correctly, for example
+        // by returning an Option<T>, but I want to keep the inner
+        // scanning inner loop tight. Obviously this might end up with
+        // some incorrect results.
+        let _ = self.mem_file.read_exact(&mut buffer);
 
         T::from_le_bytes(&buffer)
     }
