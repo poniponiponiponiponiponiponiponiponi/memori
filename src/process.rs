@@ -22,7 +22,7 @@ impl Process {
         let maps_file = File::open(maps_path)?;
         let maps = io::read_to_string(maps_file)?;
 
-        let memory_maps: Vec<_> = maps.lines().map(|l| MemoryMap::from(l)).collect();
+        let memory_maps: Vec<_> = maps.lines().map(MemoryMap::from).collect();
 
         Ok(Process {
             pid,

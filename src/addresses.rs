@@ -13,6 +13,7 @@ pub trait Addresses {
         Self: Sized;
     fn get_type(&self) -> String;
     fn len(&self) -> usize;
+    fn is_empty(&self) -> bool;
     fn scan(&mut self, ctx: &Context, expr: &ScanExpr);
     fn get_addrs(&self) -> Vec<usize>;
     fn clone_box(&self) -> Box<dyn Addresses>;
@@ -146,7 +147,7 @@ where
         Self {
             values: Vec::new(),
             addresses: Vec::new(),
-            memory_reader: U::new(&process),
+            memory_reader: U::new(process),
         }
     }
 
@@ -182,8 +183,12 @@ where
         self.values.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
     fn scan(&mut self, ctx: &Context, expr: &ScanExpr) {
-        if self.values.len() != 0 {
+        if !self.values.is_empty() {
             self.noninitial_scan(ctx, expr);
         } else {
             self.initial_scan(ctx, expr);

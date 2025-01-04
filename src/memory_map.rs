@@ -31,7 +31,7 @@ impl MemoryMap {
         // example input from `man proc_pid_maps`:
         // address           perms offset  dev   inode       pathname
         // 00400000-00452000 r-xp 00000000 08:02 173521      /usr/bin/dbus-daemon
-        let cols: Vec<_> = line.trim().split_whitespace().collect();
+        let cols: Vec<_> = line.split_whitespace().collect();
 
         if cols.len() < 5 {
             panic!("incorrect line supplied for MemoryMap");
@@ -43,9 +43,9 @@ impl MemoryMap {
         let addr_start =
             usize::from_str_radix(addr_start, 16).expect("address is not a hex number");
         let addr_end = usize::from_str_radix(addr_end, 16).expect("address is not a hex number");
-        let perms = Permissions::from(&cols[1]);
+        let perms = Permissions::from(cols[1]);
         let offset = usize::from_str_radix(cols[2], 16).expect("offset is not a hex number");
-        let dev = Device::from(&cols[3]);
+        let dev = Device::from(cols[3]);
         let inode = cols[4].parse().expect("inode is not a number");
         let pathname = cols.get(5).unwrap_or(&"").to_string();
 

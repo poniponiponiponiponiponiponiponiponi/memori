@@ -19,6 +19,12 @@ pub struct Message {
     pub is_error: bool,
 }
 
+impl<'a> Default for Repl<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> Repl<'a> {
     pub fn new() -> Self {
         Repl {
@@ -55,53 +61,53 @@ impl<'a> Repl<'a> {
                         ctx.process.as_ref().unwrap().command
                     )
                     .to_string();
-                    return Message {
+                    Message {
                         message,
                         is_error: false,
-                    };
+                    }
                 }
                 Err(err) => {
-                    return Message {
+                    Message {
                         message: err.to_string(),
                         is_error: true,
-                    };
+                    }
                 }
             },
             Command::Type(type_args) => {
                 ctx.change_type(type_args);
-                return Message {
+                Message {
                     message: format!("changed type successfuly to {}", ctx.get_type()),
                     is_error: false,
-                };
+                }
             }
             Command::Filter(filter_args) => {
-                let scan_expr = util::filter_args_to_scan_expr(&filter_args);
+                let scan_expr = util::filter_args_to_scan_expr(filter_args);
                 // Little weird to satisfy the borrow checker
                 if let Some(mut addrs) = ctx.addrs.take() {
                     addrs.scan(ctx, &scan_expr);
                     ctx.addrs = Some(addrs);
                 }
-                return Message {
+                 Message {
                     message: format!(
                         "scanner found {} addresses",
                         ctx.addrs.as_ref().unwrap().len()
                     ),
                     is_error: false,
-                };
+                }
             }
             Command::Print => {
                 util::print_addrs(ctx.addrs.as_mut().unwrap());
-                return Message {
+                Message {
                     message: "".to_string(),
                     is_error: false,
                 }
             }
             Command::Exit => {
                 ctx.quit = true;
-                return Message {
+                Message {
                     message: "".to_string(),
                     is_error: false,
-                };
+                }
             }
             _ => panic!("Impossible command"),
         }

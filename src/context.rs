@@ -11,6 +11,12 @@ pub struct Context {
     pub addrs: Option<Box<dyn Addresses>>,
 }
 
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Context {
     pub fn new() -> Context {
         Context {
