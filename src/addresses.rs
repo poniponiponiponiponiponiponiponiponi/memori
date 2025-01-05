@@ -4,6 +4,7 @@ use std::mem;
 use std::{any, str::FromStr};
 
 use crate::context::Context;
+use crate::memory_map::MemoryMap;
 use crate::memory_reader::{FromLeBytes, MemoryReader, MemoryReaderSimple};
 use crate::process::Process;
 
@@ -14,7 +15,12 @@ pub trait Addresses {
     fn get_type(&self) -> String;
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
-    fn scan(&mut self, ctx: &Context, expr: &ScanExpr);
+    fn scan(
+        &mut self,
+        ctx: &Context,
+        expr: &ScanExpr,
+        report_progress: Box<dyn FnMut(usize, usize)>,
+    );
     fn get_addrs(&self) -> Vec<usize>;
     fn clone_box(&self) -> Box<dyn Addresses>;
     fn get_vals(&self) -> Vec<String>;
@@ -155,7 +161,13 @@ where
         self.addresses
             .iter()
             .zip(self.values.iter())
-            .map(|(&addr, val)| (addr, val.to_string(), self.memory_reader.read(addr).to_string()))
+            .map(|(&addr, val)| {
+                (
+                    addr,
+                    val.to_string(),
+                    self.memory_reader.read(addr).to_string(),
+                )
+            })
             .collect()
     }
 
@@ -165,8 +177,7 @@ where
             addresses: self.addresses.clone(),
             memory_reader: self.memory_reader.clone(),
         })
-    
-}
+    }
     fn get_addrs(&self) -> Vec<usize> {
         self.addresses.clone()
     }
@@ -187,11 +198,16 @@ where
         self.values.is_empty()
     }
 
-    fn scan(&mut self, ctx: &Context, expr: &ScanExpr) {
+    fn scan(
+        &mut self,
+        ctx: &Context,
+        expr: &ScanExpr,
+        report_progress: Box<dyn FnMut(usize, usize)>,
+    ) {
         if !self.values.is_empty() {
-            self.noninitial_scan(ctx, expr);
+            self.noninitial_scan(ctx, expr, report_progress);
         } else {
-            self.initial_scan(ctx, expr);
+            self.initial_scan(ctx, expr, report_progress);
         }
     }
 }
@@ -203,23 +219,49 @@ where
     U: MemoryReader + 'static,
     [(); mem::size_of::<T>()]:,
 {
-    fn noninitial_scan(&mut self, ctx: &Context, expr: &ScanExpr) {
+    fn noninitial_scan(
+        &mut self,
+        ctx: &Context,
+        expr: &ScanExpr,
+        mut report_progress: Box<dyn FnMut(usize, usize)>,
+    ) {
         let old_vals = mem::take(&mut self.values);
         let old_addrs = mem::take(&mut self.addresses);
         let mut f_if_true = |val: T, addr: usize| {
             self.values.push(val);
             self.addresses.push(addr);
         };
-        expr.eval_expr(
-            ctx,
-            &mut f_if_true,
-            old_vals.into_iter(),
-            old_addrs.into_iter(),
-        );
+        let to_scan = old_addrs.len();
+        let mut addrs_iter = old_addrs.into_iter().enumerate();
+        let f = iter::from_fn(|| {
+            if let Some((i, ret)) = addrs_iter.next() {
+                if i % 1000 == 0 {
+                    report_progress(i, to_scan);
+                }
+                Some(ret)
+            } else {
+                None
+            }
+        });
+        expr.eval_expr(ctx, &mut f_if_true, old_vals.into_iter(), f);
+        report_progress(to_scan, to_scan);
     }
 
-    fn initial_scan(&mut self, ctx: &Context, expr: &ScanExpr) {
-        for memory_map in ctx.process.as_ref().unwrap().memory_maps.iter() {
+    fn initial_scan(
+        &mut self,
+        ctx: &Context,
+        expr: &ScanExpr,
+        mut report_progress: Box<dyn FnMut(usize, usize)>,
+    ) {
+        let memory_maps = &ctx.process.as_ref().unwrap().memory_maps;
+        let calc_addr_num =
+            |mm: &MemoryMap| (mm.addr_end - mm.addr_start) / mem::size_of::<usize>();
+        let to_scan: usize = memory_maps.iter().map(calc_addr_num).sum();
+
+        let mut scanned = 0;
+        for memory_map in memory_maps.iter() {
+            scanned += calc_addr_num(memory_map);
+
             if !memory_map.perms.read {
                 continue;
             }
@@ -235,6 +277,7 @@ where
                 self.addresses.push(addr);
             };
             expr.eval_expr(ctx, &mut f_if_true, vals, addrs);
+            report_progress(scanned, to_scan);
         }
     }
 }
@@ -252,7 +295,7 @@ mod tests {
         let weird_numbers = vec![0xc0ffee, 0xc0ffee, 0xc0ffee];
         let scan_expr = ScanExpr::Equal(weird_numbers[0].to_string());
         let mut addrs = AddrsSimple::<i32, MemoryReaderSimple>::new(process);
-        addrs.scan(&ctx, &scan_expr);
+        addrs.scan(&ctx, &scan_expr, Box::new(|_, _| ()));
 
         assert!(addrs.len() >= weird_numbers.len());
 

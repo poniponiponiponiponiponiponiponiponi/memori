@@ -48,7 +48,9 @@ impl_from_le_bytes!(u8);
 
 impl Clone for MemoryReaderSimple {
     fn clone(&self) -> Self {
-        MemoryReaderSimple { mem_file: self.mem_file.try_clone().unwrap() }
+        MemoryReaderSimple {
+            mem_file: self.mem_file.try_clone().unwrap(),
+        }
     }
 }
 

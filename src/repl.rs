@@ -1,11 +1,14 @@
 use crate::commands::{Cli, Command};
 use crate::context::Context;
-use crate::util;
+use crate::{addresses, animations, util};
 
 use clap::Parser;
 use rustyline::error::ReadlineError;
 use rustyline::history::DefaultHistory;
 use rustyline::{DefaultEditor, Editor};
+
+use std::sync::mpsc;
+use std::thread;
 
 static DEFAULT_PROMPT: &str = "memori λ ";
 
@@ -66,12 +69,10 @@ impl<'a> Repl<'a> {
                         is_error: false,
                     }
                 }
-                Err(err) => {
-                    Message {
-                        message: err.to_string(),
-                        is_error: true,
-                    }
-                }
+                Err(err) => Message {
+                    message: err.to_string(),
+                    is_error: true,
+                },
             },
             Command::Type(type_args) => {
                 ctx.change_type(type_args);
@@ -84,10 +85,21 @@ impl<'a> Repl<'a> {
                 let scan_expr = util::filter_args_to_scan_expr(filter_args);
                 // Little weird to satisfy the borrow checker
                 if let Some(mut addrs) = ctx.addrs.take() {
-                    addrs.scan(ctx, &scan_expr);
+                    let (tx, rx) = mpsc::channel();
+                    let thread = thread::spawn(move || {
+                        animations::bar::bar(rx);
+                    });
+                    addrs.scan(
+                        ctx,
+                        &scan_expr,
+                        Box::new(move |scanned, to_scan| {
+                            tx.send((scanned, to_scan)).unwrap();
+                        }),
+                    );
                     ctx.addrs = Some(addrs);
+                    thread.join().unwrap();
                 }
-                 Message {
+                Message {
                     message: format!(
                         "scanner found {} addresses",
                         ctx.addrs.as_ref().unwrap().len()
