@@ -12,6 +12,8 @@ pub trait MemoryReader: Clone {
         [(); mem::size_of::<T>()]:;
 }
 
+/// Slowest naive memory reader. It's there mostly for having a simple
+/// but correct implementation as a reference and debugging purposes.
 pub struct MemoryReaderSimple {
     mem_file: File,
 }
