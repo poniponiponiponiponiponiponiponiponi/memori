@@ -4,18 +4,19 @@ use crate::addresses::{Addresses, ScanExpr};
 use crate::commands::{FilterArgs, FilterOperator};
 
 pub fn filter_args_to_scan_expr(filter_args: &FilterArgs) -> ScanExpr {
+    let operand = filter_args.operand.as_ref();
     match filter_args.operator {
-        FilterOperator::Less => ScanExpr::Less(filter_args.operand.as_ref().unwrap().clone()),
+        FilterOperator::Less => ScanExpr::Less(operand.unwrap().clone()),
         FilterOperator::LessEqual => {
-            ScanExpr::LessEqual(filter_args.operand.as_ref().unwrap().clone())
+            ScanExpr::LessEqual(operand.unwrap().clone())
         }
-        FilterOperator::Greater => ScanExpr::Greater(filter_args.operand.as_ref().unwrap().clone()),
+        FilterOperator::Greater => ScanExpr::Greater(operand.unwrap().clone()),
         FilterOperator::GreaterEqual => {
-            ScanExpr::GreaterEqual(filter_args.operand.as_ref().unwrap().clone())
+            ScanExpr::GreaterEqual(operand.unwrap().clone())
         }
-        FilterOperator::Equal => ScanExpr::Equal(filter_args.operand.as_ref().unwrap().clone()),
+        FilterOperator::Equal => ScanExpr::Equal(operand.unwrap().clone()),
         FilterOperator::NotEqual => {
-            ScanExpr::NotEqual(filter_args.operand.as_ref().unwrap().clone())
+            ScanExpr::NotEqual(operand.unwrap().clone())
         }
         FilterOperator::Changed => ScanExpr::Changed,
         FilterOperator::NotChanged => ScanExpr::NotChanged,
