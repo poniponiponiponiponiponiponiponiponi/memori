@@ -97,7 +97,7 @@ impl Repl {
                 if let Some(mut addrs) = ctx.addrs.take() {
                     let (tx, rx) = mpsc::channel();
                     let thread = thread::spawn(move || {
-                        animations::bar::bar(rx);
+                        animations::bar::game_of_life(rx);
                     });
                     addrs.scan(
                         ctx,
