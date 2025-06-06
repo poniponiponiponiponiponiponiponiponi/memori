@@ -79,6 +79,12 @@ impl Repl {
                 },
             },
             Command::Type(type_args) => {
+                if ctx.process.is_none() {
+                    return Message {
+                        message: "You have to select a process first".to_string(),
+                        is_error: true,
+                    }
+                }
                 ctx.change_type(type_args);
                 Message {
                     message: format!("changed type successfuly to {}", ctx.get_type()),
@@ -137,9 +143,14 @@ impl Repl {
                 }
             }
             true => {
-                println!("got error: {}", msg.message);
+                println!("{} {}",
+                    "Error while executing command:".fg::<Red>().bold().underline(),
+                    msg.message
+                );
             }
         }
+        
+        println!("");
     }
 
     pub fn repl(&mut self) {
