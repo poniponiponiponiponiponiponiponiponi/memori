@@ -3,6 +3,8 @@ use crate::context::Context;
 use crate::{addresses, animations, util};
 
 use clap::Parser;
+use owo_colors::colors::{Red, Yellow};
+use owo_colors::OwoColorize;
 use rustyline::error::ReadlineError;
 use rustyline::history::DefaultHistory;
 use rustyline::{DefaultEditor, Editor};
@@ -10,11 +12,13 @@ use rustyline::{DefaultEditor, Editor};
 use std::sync::mpsc;
 use std::thread;
 
-static DEFAULT_PROMPT: &str = "memori λ ";
+fn default_prompt() -> String {
+    format!("{} {} ", "memori".fg::<Red>().italic(), "λ".fg::<Yellow>())
+}
 
-pub struct Repl<'a> {
+pub struct Repl {
     editor: Editor<(), DefaultHistory>,
-    prompt: &'a str,
+    prompt: String,
 }
 
 pub struct Message {
@@ -22,17 +26,17 @@ pub struct Message {
     pub is_error: bool,
 }
 
-impl<'a> Default for Repl<'a> {
+impl Default for Repl {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a> Repl<'a> {
+impl Repl {
     pub fn new() -> Self {
         Repl {
-            editor: DefaultEditor::new().expect("I just don't know what went wrong"),
-            prompt: DEFAULT_PROMPT,
+            editor: DefaultEditor::new().expect("I just don't know what went wrong..."),
+            prompt: default_prompt(),
         }
     }
 
@@ -40,7 +44,7 @@ impl<'a> Repl<'a> {
     // pressed C-c or C-d or we encountered an error. Either way the
     // caller probably should end the execution of the program.
     pub fn read(&mut self) -> Option<String> {
-        let line = self.editor.readline(self.prompt);
+        let line = self.editor.readline(&self.prompt);
         match line {
             Ok(line) => {
                 self.editor.add_history_entry(&line).unwrap();
