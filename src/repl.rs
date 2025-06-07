@@ -92,7 +92,15 @@ impl Repl {
                 }
             }
             Command::Filter(filter_args) => {
+                if ctx.addrs.is_none() {
+                    return Message {
+                        message: "You have to select a type first".to_string(),
+                        is_error: false,
+                    }
+                }
+                
                 let scan_expr = util::filter_args_to_scan_expr(filter_args);
+                
                 // Little weird to satisfy the borrow checker
                 if let Some(mut addrs) = ctx.addrs.take() {
                     let (tx, rx) = mpsc::channel();
