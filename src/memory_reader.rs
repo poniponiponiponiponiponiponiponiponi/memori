@@ -1,15 +1,17 @@
 use crate::process::Process;
 
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::mem;
 use std::path::PathBuf;
+use std::fs::OpenOptions;
 
 pub trait MemoryReader: Clone {
     fn new(process: &Process) -> Self;
     fn read<T: Copy + FromLeBytes>(&mut self, addr: usize) -> T
     where
         [(); mem::size_of::<T>()]:;
+    fn write(&mut self, addr: usize, value: i32);
 }
 
 /// Slowest naive memory reader. It's there mostly for having a simple
@@ -61,8 +63,13 @@ impl MemoryReader for MemoryReaderSimple {
         let mem_path = PathBuf::from("/proc")
             .join(process.pid.to_string())
             .join("mem");
-        let mem_file = File::open(mem_path)
-            .expect("Should work because /proc/pid/maps was already read in Process::try_new()");
+        // let mem_file = File::open(mem_path)
+        //     .expect("Should work because /proc/pid/maps was already read in Process::try_new()");
+        let mem_file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(mem_path)
+            .expect("Failed to open in read-write mode");
         Self { mem_file }
     }
 
@@ -85,6 +92,13 @@ impl MemoryReader for MemoryReaderSimple {
         let _ = self.mem_file.read_exact(&mut buffer);
 
         T::from_le_bytes(&buffer)
+    }
+
+    fn write(&mut self, addr: usize, value: i32) {
+        self.mem_file.seek(SeekFrom::Start(addr as u64)).expect("a");
+
+        let bytes = value.to_le_bytes();
+        self.mem_file.write_all(&bytes).unwrap();
     }
 }
 

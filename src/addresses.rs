@@ -26,6 +26,7 @@ pub trait Addresses {
     fn get_vals(&self) -> Vec<String>;
     // address, value when scanned, current value
     fn get_vals_to_print(&mut self) -> Vec<(usize, String, String)>;
+    fn write(&mut self, value: i32, addr_idx: usize);
 }
 
 #[derive(Debug)]
@@ -209,6 +210,11 @@ where
         } else {
             self.initial_scan(ctx, expr, report_progress);
         }
+    }
+
+    fn write(&mut self, value: i32, addr_idx: usize) {
+        let addr = self.addresses[addr_idx];
+        self.memory_reader.write(addr, value);
     }
 }
 

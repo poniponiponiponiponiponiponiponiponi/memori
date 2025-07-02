@@ -138,7 +138,15 @@ impl Repl {
                     message: "".to_string(),
                     is_error: false,
                 }
+            },
+            Command::Set(set_args) => {
+                ctx.addrs.as_mut().unwrap().write(set_args.value.parse().unwrap(), set_args.selected);
+                Message {
+                    message: "".to_string(),
+                    is_error: false,
+                }
             }
+            
             _ => panic!("Impossible command"),
         }
     }
